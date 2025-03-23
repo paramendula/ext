@@ -23,10 +23,10 @@
 // You may fully program in ext
 // The code is fully transpiled into C afterwards
 func main(argc: int, argv: char**) -> int {
-  // Semicolons aren't necessary,
+  // Semicolons aren't necessary
   fputs("Hello, World!", stdout)
 
-  // but you may put as much of them as you want to! (around statements)
+  // but you may put as many of them as you want to (around statements)
   ; ; ; ;;;;fputs("from ext!\n", stdout);;;;; ; ; ; ;
   // ^ ugly code, just a showcase
 
