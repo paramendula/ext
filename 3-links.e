@@ -1,4 +1,4 @@
-// ext programming language
+// the Ext programming language
 // Example 3: Links
 
 #include <stdio.h>
@@ -10,6 +10,6 @@ link Talk {
     }
 }
 
-func main(argc: int, argv: char**) -> int {
+pub func main(argc: int, argv: char**) -> int {
     0
 }

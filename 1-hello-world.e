@@ -1,4 +1,4 @@
-// ext programming language
+// the E programming language
 // Example 1: Hello World
 
 /*
@@ -10,8 +10,10 @@
  * <-
  */
 
-/* ext is a programming language purely
- * specialized to be a complement to C
+/* Ext is a programming language purely
+ * specialized to be a complement to C.
+ * Inspired by C (of course), Rust, Zig
+ * and Scheme Lisp.
  */
 
 
@@ -20,9 +22,9 @@
 
 // '#' directives are 1-to-1 from C
 
-// You may fully program in ext
+// You may fully program in Ext
 // The code is fully transpiled into C afterwards
-func main(argc: int, argv: char**) -> int {
+pub func main(argc: int, argv: char**) -> int {
   // Semicolons aren't necessary
   fputs("Hello, World!", stdout)
 
