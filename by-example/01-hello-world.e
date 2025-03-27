@@ -1,4 +1,4 @@
-// the E programming language
+// the Ext programming language
 // Example 1: Hello World
 
 /*
