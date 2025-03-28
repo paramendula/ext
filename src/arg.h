@@ -8,7 +8,7 @@
 typedef struct arg {
     struct arg *next;
     char *key, *val;
-} arg_t;
+} arg;
 
 // Simple CLI arguments parsing function
 // Changes *ret and *ret_len only if (argc and argv are valid) and (OK returned)
@@ -18,7 +18,7 @@ typedef struct arg {
 // ERR_NULLP if argv == NULL
 // ERR_NEM if were unable to allocate memory for an argument
 // *ret always ends with an arg_t that has key and val both set to NULL
-int parse_args(int argc, char **argv, arg_t **ret, int *ret_len) {
+int parse_args(int argc, char **argv, arg **ret, int *ret_len) {
     if(!argv) return ERR_NULLP;
 
     if(argc == 1) {
@@ -29,7 +29,7 @@ int parse_args(int argc, char **argv, arg_t **ret, int *ret_len) {
 
     if(!ret) return OK;
 
-    arg_t *first = NULL;
+    arg *first = NULL;
     int len = 0;
 
     // (i = 1) skip executable path

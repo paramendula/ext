@@ -1,0 +1,1 @@
+useful syntaxes for working with *T types

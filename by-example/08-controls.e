@@ -7,3 +7,5 @@ Candidates:
     if/else if/else
     when
     unless
+
+// match, switch and so on

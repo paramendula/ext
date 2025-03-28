@@ -19,19 +19,19 @@
 typedef struct str {
     size_t len, cap;
     char *raw;
-} str_t;
+} str;
 
-void str_clean(str_t *s) {
+void str_clean(str *s) {
     if(!s) return;
     if(s->raw) free(s->raw);
 }
 
-void str_free(str_t *s) {
+void str_free(str *s) {
     str_clean(s);
     free(s);
 }
 
-int str_empty_into(str_t *buff, size_t cap) {
+int str_empty_into(str *buff, size_t cap) {
     if(!buff) return ERR_NULLP;
 
     char *raw = NULL;
@@ -42,7 +42,7 @@ int str_empty_into(str_t *buff, size_t cap) {
         if(!raw) return ERR_NEM;
     }
 
-    *buff = (str_t) {
+    *buff = (str) {
         .len = 0,
         .cap = cap,
         .raw = raw,
@@ -51,12 +51,12 @@ int str_empty_into(str_t *buff, size_t cap) {
     return OK;
 }
 
-inline static str_t *str_empty_alloc(size_t cap) {
-    str_t *s = (str_t *)malloc(sizeof(*s));
+inline static str *str_empty_alloc(size_t cap) {
+    str *s = (str *)malloc(sizeof(*s));
     return str_empty_into(s, cap) ? s : NULL;
 }
 
-int str_from_ch_into(str_t *buff, char ch) {
+int str_from_ch_into(str *buff, char ch) {
     if(!buff) return ERR_NULLP;
 
     char *raw = (char *)malloc(2);
@@ -66,7 +66,7 @@ int str_from_ch_into(str_t *buff, char ch) {
     raw[0] = ch;
     raw[1] = 0;
 
-    *buff = (str_t) {
+    *buff = (str) {
         .len = 1,
         .cap = 1,
         .raw = raw,
@@ -75,12 +75,12 @@ int str_from_ch_into(str_t *buff, char ch) {
     return OK;
 }
 
-inline static str_t *str_from_ch_alloc(char ch) {
-    str_t *s = (str_t *)malloc(sizeof(*s));
+inline static str *str_from_ch_alloc(char ch) {
+    str *s = (str *)malloc(sizeof(*s));
     return str_from_ch_into(s, ch) ? s : NULL;
 }
 
-int str_from_raw_own_into(str_t *buff, char *raw, size_t len, size_t cap) {
+int str_from_raw_own_into(str *buff, char *raw, size_t len, size_t cap) {
     if(!buff) return ERR_NULLP;
 
     if(raw) {
@@ -89,7 +89,7 @@ int str_from_raw_own_into(str_t *buff, char *raw, size_t len, size_t cap) {
 
     raw[len] = 0;
 
-    *buff = (str_t) {
+    *buff = (str) {
         .len = len,
         .cap = cap,
         .raw = raw,
@@ -98,24 +98,24 @@ int str_from_raw_own_into(str_t *buff, char *raw, size_t len, size_t cap) {
     return OK;
 }
 
-inline static str_t *str_from_raw_own_alloc(char *raw, size_t len, size_t cap) {
-    str_t *s = (str_t *)malloc(sizeof(*s));
+inline static str *str_from_raw_own_alloc(char *raw, size_t len, size_t cap) {
+    str *s = (str *)malloc(sizeof(*s));
     return str_from_raw_own_into(s, raw, len, cap) ? s : NULL;
 }
 
-inline static int str_from_raw_own_into_unsafe(str_t *buff, char *raw) {
+inline static int str_from_raw_own_into_unsafe(str *buff, char *raw) {
     size_t len = strlen(raw);
     return str_from_raw_own_into(buff, raw, len, len);
 }
 
-inline static str_t *str_from_raw_own_alloc_unsafe(char *raw) {
-    str_t *s = (str_t *)malloc(sizeof(*s));
+inline static str *str_from_raw_own_alloc_unsafe(char *raw) {
+    str *s = (str *)malloc(sizeof(*s));
     if(!s) return NULL;
     size_t l = strlen(raw);
     return str_from_raw_own_into(s, raw, l, l) ? s : NULL;
 }
 
-int str_from_raw_into(str_t *buff, char *raw, size_t len) {
+int str_from_raw_into(str *buff, char *raw, size_t len) {
     if(len == 0) return str_empty_into(buff, 0);
     if(!buff) return ERR_NULLP;
     if(!raw && len != 0) return ERR_WARG;
@@ -126,7 +126,7 @@ int str_from_raw_into(str_t *buff, char *raw, size_t len) {
     memcpy(raw_copy, raw, len);
     raw_copy[len] = 0;
 
-    *buff = (str_t) {
+    *buff = (str) {
         .len = len,
         .cap = len,
         .raw = raw_copy,
@@ -135,21 +135,21 @@ int str_from_raw_into(str_t *buff, char *raw, size_t len) {
     return OK;
 }
 
-inline static str_t *str_from_raw_alloc(char *raw, size_t len) {
-    str_t *s = (str_t *)malloc(sizeof(*s));
+inline static str *str_from_raw_alloc(char *raw, size_t len) {
+    str *s = (str *)malloc(sizeof(*s));
     return str_from_raw_into(s, raw, len) ? s : NULL;
 }
 
-inline static int str_from_raw_into_unsafe(str_t *buff, char *raw) {
+inline static int str_from_raw_into_unsafe(str *buff, char *raw) {
     return str_from_raw_into(buff, raw, strlen(raw));
 }
 
-inline static str_t *str_from_raw_alloc_unsafe(char *raw) {
-    str_t *s = (str_t *)malloc(sizeof(*s));
+inline static str *str_from_raw_alloc_unsafe(char *raw) {
+    str *s = (str *)malloc(sizeof(*s));
     return str_from_raw_into(s, raw, strlen(raw)) ? s : NULL;
 }
 
-inline static int _str_size_check(str_t *s, size_t amount) {
+inline static int _str_size_check(str *s, size_t amount) {
     size_t nlen = s->len + amount;
     size_t cap = s->cap;
     size_t ncap = s->cap;
@@ -167,7 +167,7 @@ inline static int _str_size_check(str_t *s, size_t amount) {
     return OK;
 }
 
-int str_insert_char(str_t *s, size_t idx, char ch) {
+int str_insert_char(str *s, size_t idx, char ch) {
     if(!s) return ERR_NULLP;
     if(idx > s->len) return ERR_WARG;
     if(_str_size_check(s, 1)) return ERR_NEM;
@@ -184,7 +184,7 @@ int str_insert_char(str_t *s, size_t idx, char ch) {
     return OK;
 }
 
-int str_insert_raw(str_t *s, size_t idx, char *raw, size_t len) {
+int str_insert_raw(str *s, size_t idx, char *raw, size_t len) {
     if(!s) return ERR_NULLP;
     if(idx > s->len) return ERR_WARG;
     if(len == 0) return OK;
@@ -204,11 +204,11 @@ int str_insert_raw(str_t *s, size_t idx, char *raw, size_t len) {
     return OK;
 }
 
-int str_insert_raw_unsafe(str_t *s, size_t idx, char *raw) {
+int str_insert_raw_unsafe(str *s, size_t idx, char *raw) {
     return str_insert_raw(s, idx, raw, strlen(raw));
 }
 
-int str_insert(str_t *s1, size_t idx, str_t *s2) {
+int str_insert(str *s1, size_t idx, str *s2) {
     return str_insert_raw(s1, idx, s2->raw, s2->len);
 }
 

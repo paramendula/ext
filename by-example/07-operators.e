@@ -8,3 +8,9 @@ struct SimpleComplex {
         SimpleComplex(self.x + other.x, self.z + other.z)
     }
 }
+
+// struct-like declaration init func
+// declaration init func (classic)
+// assignment op
+// == !=
+// + - / * %
