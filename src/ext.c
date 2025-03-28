@@ -9,6 +9,7 @@ typedef struct opts {
 } opts_t;
 
 typedef struct arg {
+    struct arg *next;
     char *key, *val;
 } arg_t;
 
@@ -31,10 +32,17 @@ int parse_args(int argc, char **argv, arg_t **ret, int *ret_len) {
 
     if(!ret) return OK;
 
+
+    arg_t *first = NULL;
+    int len = 0;
+
     // (i = 1) skip executable path
     for(int i = 1; i < argc; i++) {
 
     }
+
+    *ret = first;
+    if(ret_len) *ret_len = len;
 
     return OK;
 }
