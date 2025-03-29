@@ -105,7 +105,7 @@ typedef enum eC_ast {
     caPostfix, // ++ --
     caSub, // a[n]
     caComma, // a, b, c
-    caTypeCast, // (type)a
+    caTypeCast, // (<id>)a
     caSizeof, // sizeof a
     caCond, // a ? b : c
     caCall, // <id>(...)
@@ -125,15 +125,49 @@ typedef enum eC_ast {
     caDeclaration,
 } eC_ast;
 
+typedef struct c_ast {
+    eC_ast t;
+    void *data;
+} c_ast;
+
+
+typedef struct c_infix {
+    eC_tok op;
+    struct c_ast left, right;
+} c_infix;
+
+typedef struct c_prefix {
+    eC_tok op;
+    struct c_ast right;
+} c_prefix;
+
+typedef struct c_postfix {
+    eC_tok op;
+    struct c_ast left;
+} c_postfix;
+
+typedef struct c_sub {
+    struct c_ast arr, idx;
+} c_sub;
+
+typedef struct c_typecast {
+    char *id;
+    struct c_ast right;
+} c_typecast;
+
+typedef struct c_cond {
+    struct c_ast cond, b1, b2;
+} c_cond;
+
 // always check for e != caWrong beforehand
 #define CAST_IS_PRE(e) ((e) <= caPreLine)
 #define CAST_IS_EXPR(e) (((e) > caPreLine) && ((e) <= caCall))
 #define CAST_IS_STAT(e) ((e) > caCall)
 
-typedef struct c_ast {
-    struct c_ast *prev, *next;
-    eC_ast t;
-} c_ast;
+typedef struct c_ast_node {
+    struct c_ast_node *prev, *next;
+    struct c_ast val;
+} c_ast_node;
 
 typedef struct c_code {
     int tok_count;
@@ -141,7 +175,7 @@ typedef struct c_code {
     // TODO: tok errors
 
     int ast_count;
-    c_ast *ast_first, ast_last;
+    c_ast_node *ast_first, ast_last;
     // TODO: ast errors
 } c_code;
 
@@ -181,7 +215,7 @@ void c_tok_clean(c_tok *t) {
     // TODO
 }
 
-inline static c_tok_free(c_tok *t) {
+inline static void c_tok_free(c_tok *t) {
     c_tok_clean(t);
     free(t);
 }
@@ -191,7 +225,7 @@ void c_ast_clean(c_ast *a) {
     // TODO
 }
 
-void c_ast_free(c_ast *a) {
+inline static void c_ast_free(c_ast *a) {
     c_ast_clean(a);
     free(a);
 }
@@ -208,7 +242,7 @@ inline static void c_code_free(c_code *c) {
 }
 
 // C source code -> C tokens
-int c_parse_into(c_code *buff, c_opts *opts, c_vtable *vt, void *data) {
+int c_parse_into(c_code *buff, const c_opts *opts, c_vtable *vt, void *data) {
     if(!buff) return ERR_NULLP;
     if(!vt) return ERR_NULLP;
     if(!data) return ERR_NULLP;

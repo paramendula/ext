@@ -18,7 +18,7 @@ typedef struct arg {
 // ERR_NULLP if argv == NULL
 // ERR_NEM if were unable to allocate memory for an argument
 // *ret always ends with an arg_t that has key and val both set to NULL
-int parse_args(int argc, char **argv, arg **ret, int *ret_len) {
+int parse_args(int argc, const char **argv, const arg **ret, int *ret_len) {
     if(!argv) return ERR_NULLP;
 
     if(argc == 1) {
@@ -34,7 +34,7 @@ int parse_args(int argc, char **argv, arg **ret, int *ret_len) {
 
     // (i = 1) skip executable path
     for(int i = 1; i < argc; i++) {
-        char *v = argv[i];
+        const char *v = argv[i];
         
     }
 
