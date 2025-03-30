@@ -78,10 +78,25 @@ typedef enum {
 } eC_tok;
 
 typedef struct c_tok {
-    struct c_tok *prev, *next;
     eC_tok t;
     char *raw; // id, str, char, int, real, wspace
 } c_tok;
+
+typedef struct c_tok_node {
+    struct c_tok_node *prev, *next;
+    union {
+        struct {
+            eC_tok t;
+            char * raw;
+        };
+        c_tok tok;
+    };
+} c_tok_node;
+
+typedef struct c_tok_list {
+    int count;
+    c_tok_node *first, *last;
+} c_tok_list;
 
 typedef enum eC_ast {
     caWrong = 0,
@@ -98,7 +113,7 @@ typedef enum eC_ast {
     caPreInclude,
     caPreLine,
     // expression
-    caBasic, // token holder for basic expressions (all literals + identifiers)
+    caBasic, // token holder for basic expressions (all simple literals + identifiers)
     caInfix, // + - * / % >> << & | ^ && || = == != += -= *= /= %= >>= <<= &= |= ^= . ->
              // > < <= >=
     caPrefix, // - + * ++ -- ! ~ &
@@ -108,9 +123,9 @@ typedef enum eC_ast {
     caTypeCast, // (<id>)a
     caSizeof, // sizeof a
     caCond, // a ? b : c
+    caInit, // { ... }
     caCall, // <id>(...)
     // statement
-    caTypedef,
     caLabel,
     caBlock,
     caIf,
@@ -130,6 +145,30 @@ typedef struct c_ast {
     void *data;
 } c_ast;
 
+typedef struct c_ast_node {
+    struct c_ast_node *prev, *next;
+
+    union {
+        struct {
+            eC_ast t;
+            void *data;
+        };
+        c_ast ast;
+    };
+} c_ast_node;
+
+typedef struct c_ast_list {
+    int count;
+    c_ast_node *first, *last;
+} c_ast_list;
+
+// PREPROCESSOR
+
+
+// EXPRESSIONS
+
+// caBasic: c_tok
+// caSizeof: c_ast
 
 typedef struct c_infix {
     eC_tok op;
@@ -159,38 +198,135 @@ typedef struct c_cond {
     struct c_ast cond, b1, b2;
 } c_cond;
 
+typedef struct cini_memspec {
+    struct cini_memspec *next;
+    char is_id; // is .<id>? if not, it's [<expr>]
+    union {
+        char *id;
+        c_ast expr;
+    };
+} cini_memspec;
+
+typedef struct cini_member {
+    struct cini_member *next;
+    struct cini_memspec *spec;
+    c_ast val;
+} cini_member;
+
+typedef struct c_init {
+    int count;
+    cini_member *first;
+} c_init;
+
+typedef struct c_call {
+    char *id;
+    struct c_ast *args;
+} c_call;
+
+// STATEMENTS
+
+// caBlock: c_ast_list
+// caBreak: NULL
+// caContinue: NULL
+// caReturn: c_ast
+// caGoto: char*
+
+typedef enum eC_label {
+    clabWrong,
+    clabTarget,
+    clabCase,
+    clabDefault,
+} eC_label;
+
+typedef struct c_label {
+    eC_label t;
+    union {
+        char *id; // clabTarget
+        c_tok cc; // clabCase
+    };
+} c_label;
+
+typedef struct c_if {
+    c_ast cond;
+    struct c_if *e; // else
+} c_if;
+
+typedef struct c_switch {
+    c_ast cond;
+    c_ast_list block;
+} c_switch;
+
+typedef struct c_while {
+    c_ast cond;
+    c_ast_list block;
+} c_while;
+
+typedef struct c_for {
+    c_ast init, cond, step;
+    c_ast_list block;
+} c_for;
+
+typedef struct c_do {
+    c_ast cond;
+    c_ast_list block;
+} c_do;
+
+typedef enum eC_declaration {
+    cdecWrong,
+    cdecTypedef,
+    cdecOther,
+} eC_declaration;
+
+typedef enum eCdec_type {
+    cdtWrong,
+    cdtId,
+    cdtStruct,
+    cdtEnum,
+    cdtUnion,
+} eCdec_type;
+
+typedef struct cdec_decr {
+    int pass;
+} cdec_decr;
+
+typedef struct cdec_type {
+    eCdec_type t;
+    union {
+
+    };
+} cdec_type;
+
+typedef struct cdec_typedef {
+    cdec_type type;
+    char *id;
+} cdec_typedef;
+
+typedef struct c_declaration {
+    eC_declaration t;
+    union {
+        cdec_typedef tdef;
+    };
+} c_declaration;
+
 // always check for e != caWrong beforehand
 #define CAST_IS_PRE(e) ((e) <= caPreLine)
 #define CAST_IS_EXPR(e) (((e) > caPreLine) && ((e) <= caCall))
 #define CAST_IS_STAT(e) ((e) > caCall)
 
-typedef struct c_ast_node {
-    struct c_ast_node *prev, *next;
-    struct c_ast val;
-} c_ast_node;
-
-typedef struct c_code {
-    int tok_count;
-    c_tok *tok_first, tok_last;
-    // TODO: tok errors
-
-    int ast_count;
-    c_ast_node *ast_first, ast_last;
-    // TODO: ast errors
-} c_code;
+typedef struct c_tok_parse {
+    c_tok_list l;
+} c_tok_parse;
 
 // c is a ptr
 #define C_TOKLIST(c) ((dlist*)&((c)->tok_count))
 #define C_ASTLIST(c) ((dlist*)&((c)->ast_count))
 
-typedef struct c_opts {
-    // tok
+typedef struct c_tok_opts {
     char read_error_not_fatal;
     char save_wspace;
     char save_semi;
     char save_bslash;
-    // ast
-} c_opts;
+} c_tok_opts;
 
 typedef struct c_vtable {
     char (*read_char)(void*);
@@ -203,7 +339,7 @@ typedef struct c_vtable {
     int (*get_error)(void*, char **const buff);
 } c_vtable;
 
-const c_opts C_OPTS_DEFAULT = (c_opts) {
+const c_tok_opts C_TOK_OPTS_DEFAULT = (c_tok_opts) {
     .read_error_not_fatal = 1,
     .save_wspace = 0,
     .save_semi = 0,
@@ -230,23 +366,22 @@ inline static void c_ast_free(c_ast *a) {
     free(a);
 }
 
-void c_code_clean(c_code *c) {
+void c_tok_parse_clean(c_tok_parse *c) {
     if(!c) return;
-
-    // TODO (use dlist generic)
+    // TODO 
 }
 
-inline static void c_code_free(c_code *c) {
+inline static void c_tok_parse_free(c_tok_parse *c) {
     c_code_clean(c);
     free(c);
 }
 
 // C source code -> C tokens
-int c_parse_into(c_code *buff, const c_opts *opts, c_vtable *vt, void *data) {
+int c_parse_into(c_tok_parse *buff, const c_tok_opts *opts, c_vtable *vt, void *data) {
     if(!buff) return ERR_NULLP;
     if(!vt) return ERR_NULLP;
     if(!data) return ERR_NULLP;
-    if(!opts) opts = &C_OPTS_DEFAULT;
+    if(!opts) opts = &C_TOK_OPTS_DEFAULT;
 
     while (1) {
         int status = vt->get_status(data);

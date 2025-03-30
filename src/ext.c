@@ -3,7 +3,7 @@
 
 #include "base.h"
 #include "str.h"
-// #include "arg.h"
+// #include "args.h"
 
 int main(int argc, char **argv) {
     // simple file-to-file translator currently
