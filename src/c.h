@@ -7,6 +7,7 @@
 #include "base.h"
 #include "str.h"
 #include "dlist.h"
+#include "list.h"
 
 // Input
 // C source code -> c_parse_* ->
@@ -14,8 +15,8 @@
 // C AST
 
 // Output
-// C AST -> c_ast_to_toks_* ->
-// C tokens -> c_toks_to_str_* ->
+// C AST -> c_deanalyze_* ->
+// C tokens -> c_deparse_* ->
 // C source code
 
 #define STATUS_OK 0
@@ -271,12 +272,6 @@ typedef struct c_do {
     c_ast_list block;
 } c_do;
 
-typedef enum eC_declaration {
-    cdecWrong,
-    cdecTypedef,
-    cdecOther,
-} eC_declaration;
-
 typedef enum eCdec_type {
     cdtWrong,
     cdtId,
@@ -286,26 +281,47 @@ typedef enum eCdec_type {
 } eCdec_type;
 
 typedef struct cdec_decr {
-    int pass;
+    char *id;
+    int bits; // for struct
 } cdec_decr;
 
 typedef struct cdec_type {
     eCdec_type t;
-    union {
-
-    };
+    void *data;
+    cs_list qfs;
 } cdec_type;
 
-typedef struct cdec_typedef {
+typedef struct cdec_struct_mem {
+    struct cdec_struct_mem *next;
     cdec_type type;
+    cdec_decr *decr;
+} cdec_struct_mem;
+
+typedef struct cdec_struct {
     char *id;
-} cdec_typedef;
+    int count;
+    struct cdec_struct_mem *first;
+} cdec_struct;
+
+typedef struct cdec_union {
+    char *id;
+    int count;
+    struct cdec_struct_mem *first;
+} cdec_union;
+
+typedef struct cdec_enum_mem {
+    struct cdec_enum_mem *next;
+    char *id;
+    c_ast *val; // = <const> or = <const expr>
+} cdec_enum_mem;
+
+typedef struct cdec_enum {
+    char *id, *type;
+    struct cdec_enum_mem *first;
+} cdec_enum;
 
 typedef struct c_declaration {
-    eC_declaration t;
-    union {
-        cdec_typedef tdef;
-    };
+    char is_typedef;
 } c_declaration;
 
 // always check for e != caWrong beforehand
@@ -315,11 +331,8 @@ typedef struct c_declaration {
 
 typedef struct c_tok_parse {
     c_tok_list l;
+    // errors list
 } c_tok_parse;
-
-// c is a ptr
-#define C_TOKLIST(c) ((dlist*)&((c)->tok_count))
-#define C_ASTLIST(c) ((dlist*)&((c)->ast_count))
 
 typedef struct c_tok_opts {
     char read_error_not_fatal;

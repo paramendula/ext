@@ -1,13 +1,13 @@
-#ifndef __LIST_H_
-#define __LIST_H_
+#ifndef __DLIST_H_
+#define __DLIST_H_
 
-typedef struct item {
-    struct item *prev, *next;
-} item;
+typedef struct dnode {
+    struct dnode *prev, *next;
+} dnode;
 
 typedef struct dlist {
     int count;
-    item *first, *last;
+    dnode *first, *last;
 } dlist;
 
 #endif
