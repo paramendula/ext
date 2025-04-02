@@ -109,9 +109,13 @@ typedef enum eC_ast {
     caPreEndif,
     caPreError,
     caPrePragma,
+    // caPreWarning,
     caPreDefine,
     caPreUndef,
     caPreInclude,
+    // caPreDefined, // defined <id>
+    // caPreId, // for # and ##
+    caPreCall,
     caPreLine,
     // expression
     caBasic, // token holder for basic expressions (all simple literals + identifiers)
@@ -164,7 +168,51 @@ typedef struct c_ast_list {
 } c_ast_list;
 
 // PREPROCESSOR
+// TODO: separate PP from C AST
 
+// caPreIf: c_ast* (expression)
+// caPreElif: c_ast* (expression)
+// caPreIfdef: char* (id)
+// caPreIfndef: char* (id)
+// caPreElse: NULL
+// caEndif: NULL
+// caUndef: char* (id)
+// caPreId: char* (special id with '#' or '##')
+// caPreError: char* 
+// caPrePragma: char*
+// caPreCall: c_tok_list*
+
+typedef struct c_pre_define_param {
+    struct c_pre_define_param *next;
+    char is_varg;
+    char *id;
+} c_pre_define_param;
+
+typedef struct c_pre_define {
+    char *id;
+    c_pre_define_param *first; // != NULL if a func
+    char *rep; // raw replacement list
+} c_pre_define;
+
+typedef enum eC_pre_include {
+    cpiWrong = 0,
+    cpiHString,
+    cpiQString,
+    cpiPPTokens,
+} eC_pre_include;
+
+typedef struct c_pre_include {
+    eC_pre_include t;
+    union {
+        char *str;
+        c_ast *pp;
+    };
+} c_pre_include;
+
+typedef struct c_pre_line {
+    int lineno;
+    c_ast *filename;
+} c_pre_line;
 
 // EXPRESSIONS
 
