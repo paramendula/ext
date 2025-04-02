@@ -233,7 +233,7 @@ typedef struct c_call {
 // caGoto: char*
 
 typedef enum eC_label {
-    clabWrong,
+    clabWrong = 0,
     clabTarget,
     clabCase,
     clabDefault,
@@ -273,15 +273,46 @@ typedef struct c_do {
 } c_do;
 
 typedef enum eCdec_type {
-    cdtWrong,
+    cdtWrong = 0,
     cdtId,
     cdtStruct,
     cdtEnum,
     cdtUnion,
 } eCdec_type;
 
+// int (*(*func)(double))[3] = NULL;
+// { id: func
+// parts: ptr -> function (double) :returns: -> ptr -> array (3)
+// bits: 0 (for struct members only) }
+// func is a pointer to a function that accepts one double argument
+// and returns a pointer to an array of 3 integers
+
+// also used for function parameters in function signature declaration/definiton
+struct cdef_struct_mem;
+
+typedef enum eCdec_decr_part {
+    cdpWrong = 0,
+    cdpPtr,
+    cdpArray,
+    cdpFunction,
+} eCdec_decr_part;
+
+typedef struct cdec_decr_part {
+    struct cdec_decr_part *next;
+    eCdec_decr_part t;
+    union {
+        struct cdef_struct_mem *args; // for func
+        struct {
+            cs_list *qfs;
+            c_ast *len;
+        } arr;
+    }; // 2 * sizeof(size_t)
+} cdec_decr_part;
+
 typedef struct cdec_decr {
     char *id;
+    int count;
+    cdec_decr_part *first;
     int bits; // for struct
 } cdec_decr;
 
@@ -291,6 +322,7 @@ typedef struct cdec_type {
     cs_list qfs;
 } cdec_type;
 
+// decr != NULL, except for function declaration
 typedef struct cdec_struct_mem {
     struct cdec_struct_mem *next;
     cdec_type type;
@@ -320,8 +352,17 @@ typedef struct cdec_enum {
     struct cdec_enum_mem *first;
 } cdec_enum;
 
+typedef struct cdec_pair {
+    cdec_decr decr;
+    c_ast init;
+} cdec_pair;
+
+// pseudo schema:
+// <is_typedef>?typedef <cdec_type> <cdec_pair='<cdec_decr>=<c_ast>'>+;
+
 typedef struct c_declaration {
     char is_typedef;
+    cdec_type type;
 } c_declaration;
 
 // always check for e != caWrong beforehand
@@ -341,6 +382,7 @@ typedef struct c_tok_opts {
     char save_bslash;
 } c_tok_opts;
 
+// 1 <= amount <= 256
 typedef struct c_vtable {
     char (*read_char)(void*);
     int (*read)(void*, char *buff, int amount);
@@ -349,7 +391,7 @@ typedef struct c_vtable {
     int (*peek)(void*, char *buff, int amount);
 
     int (*get_status)(void*);
-    int (*get_error)(void*, char **const buff);
+    int (*get_error)(void*, const char **buff);
 } c_vtable;
 
 const c_tok_opts C_TOK_OPTS_DEFAULT = (c_tok_opts) {
