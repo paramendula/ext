@@ -7,4 +7,6 @@
 #define ERR_NEM -3
 #define ERR_OTHER -4
 
+void free_nop(void*) { return; }
+
 #endif

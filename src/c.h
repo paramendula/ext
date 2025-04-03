@@ -3,11 +3,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "base.h"
 #include "str.h"
 #include "dlist.h"
 #include "list.h"
+#include "htable.h"
 
 // Input
 // C source code -> c_parse_* ->
@@ -95,7 +98,7 @@ typedef struct c_tok_node {
 } c_tok_node;
 
 typedef struct c_tok_list {
-    int count;
+    size_t count;
     c_tok_node *first, *last;
 } c_tok_list;
 
@@ -163,7 +166,7 @@ typedef struct c_ast_node {
 } c_ast_node;
 
 typedef struct c_ast_list {
-    int count;
+    size_t count;
     c_ast_node *first, *last;
 } c_ast_list;
 
@@ -175,8 +178,8 @@ typedef struct c_ast_list {
 // caPreIfdef: char* (id)
 // caPreIfndef: char* (id)
 // caPreElse: NULL
-// caEndif: NULL
-// caUndef: char* (id)
+// caPreEndif: NULL
+// caPreUndef: char* (id)
 // caPreId: char* (special id with '#' or '##')
 // caPreError: char* 
 // caPrePragma: char*
@@ -263,7 +266,7 @@ typedef struct cini_member {
 } cini_member;
 
 typedef struct c_init {
-    int count;
+    size_t count;
     cini_member *first;
 } c_init;
 
@@ -359,7 +362,7 @@ typedef struct cdec_decr_part {
 
 typedef struct cdec_decr {
     char *id;
-    int count;
+    size_t count;
     cdec_decr_part *first;
     int bits; // for struct
 } cdec_decr;
@@ -379,13 +382,13 @@ typedef struct cdec_struct_mem {
 
 typedef struct cdec_struct {
     char *id;
-    int count;
+    size_t count;
     struct cdec_struct_mem *first;
 } cdec_struct;
 
 typedef struct cdec_union {
     char *id;
-    int count;
+    size_t count;
     struct cdec_struct_mem *first;
 } cdec_union;
 
@@ -438,6 +441,9 @@ typedef struct c_vtable {
     char (*peek_char)(void*);
     int (*peek)(void*, char *buff, int amount);
 
+    int (*seek)(void*, int amount, int flag);
+    int (*tell)(void*);
+
     int (*get_status)(void*);
     int (*get_error)(void*, const char **buff);
 } c_vtable;
@@ -486,18 +492,36 @@ int c_parse_into(c_tok_parse *buff, const c_tok_opts *opts, c_vtable *vt, void *
     if(!data) return ERR_NULLP;
     if(!opts) opts = &C_TOK_OPTS_DEFAULT;
 
+    char ch = vt->read_char(data);
+
+    eC_tok cur_t = ctWrong;
+
     while (1) {
         int status = vt->get_status(data);
 
         if(status == STATUS_ERR) {
             if(opts->read_error_not_fatal) {
-
+                // TODO
             } else {
-
+                // TODO
             }
-        } else if(status == STATUS_EOF) {
-
         }
+
+        if(isspace(ch)) {
+            if(opts->save_wspace) {
+                // TODO
+            }
+        }
+        
+        // id
+        // str
+        // char
+        // int
+        // real
+
+        if(status == STATUS_EOF) {
+            // TODO
+        } else ch = vt->read_char(data);
     }
 
     return OK;
