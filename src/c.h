@@ -53,6 +53,8 @@ typedef enum {
     ctBar,
     ctComma,
     ctDot,
+    ctPerc,
+    ctCaret,
     ctSemi, // opt
     ctColon,
     ctWSpace, // opt
@@ -76,9 +78,12 @@ typedef enum {
     ctEqAnd,
     ctEqLess,
     ctEqGreat,
+    ctDoubleEq,
     ctDoublePlus,
     ctDoubleMinus,
     ctPtrMem, // ->
+    ctCommSingle, // opt
+    ctCommMulti, // opt
 } eC_tok;
 
 typedef struct c_tok {
@@ -431,6 +436,7 @@ typedef struct c_tok_opts {
     char save_wspace;
     char save_semi;
     char save_bslash;
+    char save_comm;
 } c_tok_opts;
 
 // 1 <= amount <= 256
@@ -453,6 +459,7 @@ const c_tok_opts C_TOK_OPTS_DEFAULT = (c_tok_opts) {
     .save_wspace = 0,
     .save_semi = 0,
     .save_bslash = 0,
+    .save_comm = 0,
 };
 
 void c_tok_clean(c_tok *t) {
@@ -485,6 +492,40 @@ inline static void c_tok_parse_free(c_tok_parse *c) {
     free(c);
 }
 
+// Simple tokens
+// ( ) [ ] { }
+// ? , . : ;
+
+// Complex Tokens
+// prep: #...$
+// id: <_, alnum>+; can't start with a digit
+// str: "..."
+// char: '...'
+// int: <num>+ || 0<X,x><hexnum>+
+// real: <int>.<int><<E,e><int>>? || 0<X,x><hexint>.<hexint><<P,p><hexint>>?
+
+// Semi-complex tokens
+// <: <, <<, <<=
+// >: >, >>, >>=
+// !: !, !=
+// &: &, &=, &&
+// *: *, *=
+// -: -, -=, --, ->
+// +: +, +=, ++
+// =: =, ==
+// /: /, /=, //, /*
+// |: |, |=, ||
+// \ : \\n
+// %: %, %=
+// ^: ^, ^=
+
+// Manual:
+// Optionals
+// Complex Tokens
+// // /* (Comments, passed from HTable)
+
+
+
 // C source code -> C tokens
 int c_parse_into(c_tok_parse *buff, const c_tok_opts *opts, c_vtable *vt, void *data) {
     if(!buff) return ERR_NULLP;
@@ -513,11 +554,7 @@ int c_parse_into(c_tok_parse *buff, const c_tok_opts *opts, c_vtable *vt, void *
             }
         }
         
-        // id
-        // str
-        // char
-        // int
-        // real
+
 
         if(status == STATUS_EOF) {
             // TODO
